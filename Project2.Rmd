@@ -13,56 +13,173 @@ library(dplyr)
 library(caret)
 library(class)
 library(tidyverse)
+library(ModelMetrics)
 
+#You should identify the top three factors that contribute to turnover (backed up by evidence provided by analysis).
+#job satisfaction, work life balance, years since last promotion, monthly income, relationship, age, job involvement, joblevel
 
-#use percentages 
+naive bayes vs knn vs knn.cv
 
-#does work life balance have an effect on attrition? 
-
-#does years since last promotion?
-
-#monthly income vs attrition
-
-# relationship satisfaction?
-
-# age vs attrition? 18-40, 40-60
-
-#Male vs female attrition
-# percent of department has attrition
-
-#naive bayes vs knn
 
 
 
 #unit 2 gg plot
-
 #unit6 knn, 7 naive bayes
-
 #unit 10/11 linear regression
 
 jobData = read.csv("./CaseStudy2-data.csv")
 
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+#use percentages
+
+
+
+jobData
+###
+#first try out simple test for knn and nb before testing them recursively
+###
+
+#example filtering data set
+#jobData = jobData %<% filter(MonthlyRate > 100 | MaritalStatus == Married)
+#
+
+###This line can be used for the for loop also for knn and knn.cv tests later
+splitPerc = .70
+
+trainIndicies = sample(1:dim(jobData)[1], round(splitPerc * dim(jobData)[1]))
+
+jobDataTrain =  jobData[trainIndicies,]
+jobDataTest  =  jobData[-trainIndicies,]
+###
+
+
+#knn(data, test, variable to test, k=?, prob=TRUE..?)
+classifications = knn(jobDataTrain[,c(3 columns)],jobDataTest[,c()], jobDataTrain$Attrition )
+table(classifications,jobDataTest$Attrition)
+confusionMatrix(table(classifications,jobDataTest$Attrition))
+
+#knn.cv
+CM = confusionMatrix(table(iris[,5],knn.cv(iris[,c(1,2)],iris[,5],k=5)))
+
+CM
+
+#nb
+#try different seeds
+set.seed(10)
+
+trainIndicies = sample(seq(1:length(jobData$Attrition)),round(.7*length(jobData$Attrition)))
+
+jobDataTrain =  jobData[trainIndicies,]
+jobDataTest  =  jobData[-trainIndicies,]
+
+model = naiveBayes(jobDataTrain[,c()],jobDataTrain$Attrition,laplace = 1)
+
+table(predict(model, jobDataTest[,c()]), jobDataTest$Attrition)
+
+CM = confusionMatrix(table(predict(model, jobDataTest[,c()])), jobDataTest$Attrition)
+
+#Knn.cv
+```{r echo=FALSE}
+# extract only beers with style "Ale" and not with "IPA"
+beerAle = combined_df %>% filter(grepl("Ale",Style) & !grepl("IPA",Style))
+beerAle = droplevels(beerAle,exclude = !beerAle)
+
+set.seed(1)
+iterations = 100
+numks = 50
+
+masterAccAle = matrix(nrow = iterations, ncol = numks)
+masterSensitivityAle = matrix(nrow=iterations, ncol=numks)
+masterSpecificityAle <- matrix(nrow=iterations, ncol=numks)
+
+for(j in 1:iterations)
+{
+  
+  for(i in 1:numks)
+  {
+    CM = confusionMatrix(table(beerAle[,6],knn.cv(beerAle[,c(4,5)],beerAle[,6],k = i)))
+    masterAccAle[j,i] = CM$overall[1]
+    masterSensitivityAle[j, i] <- mean(CM$byClass[,"Sensitivity"], na.rm = TRUE)
+    masterSpecificityAle[j, i] <- mean(CM$byClass[,"Specificity"], na.rm = TRUE)
+    
+  }
+  
+}
+
+# use the 50 accuracies from each test in the for-loop  above and store it in MeanAccAle
+MeanAccAle = colMeans(masterAccAle)
+MeanSenseAle <- colMeans(masterSensitivityAle)
+MeanSpecAle <- colMeans(masterSpecificityAle)
+
+# plot each accuracy at each K value
+plot(seq(1,numks,1),MeanAccAle)
+
+maxAccAle <- which.max(MeanAccAle)
+maxSenseAle <- which.max(MeanSenseAle)
+maxSpecAle <- which.max(MeanSpecAle)
+
+confusionMatrix(table(beerAle[,6],knn.cv(beerAle[,c(4,5)],beerAle[,6],k = 1))) # accuracy = 0.6691
+confusionMatrix(table(beerAle[,6],knn.cv(beerAle[,c(4,5)],beerAle[,6],k = 5))) # accuracy = 0.6525
+confusionMatrix(table(beerAle[,6],knn.cv(beerAle[,c(4,5)],beerAle[,6],k = 10))) # accuracy = 0.6245
+confusionMatrix(table(beerAle[,6],knn.cv(beerAle[,c(4,5)],beerAle[,6],k = 20))) # accuracy = 0.5902
+
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+#NB
+```{r echo=FALSE}
+iterations = 95
 
-```{r cars}
-summary(cars)
+masterAccNBIPA = matrix(nrow = iterations)
+masterSensitivityNBIPA = matrix(nrow=iterations)
+masterSpecificityNBIPA <- matrix(nrow=iterations)
+
+for(j in 1:iterations)
+{
+  set.seed(j)
+  trainIndicies = sample(seq(1:length(beerIPA$Style)),round(.7*length(beerIPA$Style)))
+  trainIPA = beerIPA[trainIndicies,]
+  testIPA = beerIPA[-trainIndicies,]
+  
+  model = naiveBayes(trainIPA[,c(4,5)],trainIPA$Style, laplace = 1)
+  table(predict(model,testIPA[,c(4,5)]),testIPA$Style)
+  CM = confusionMatrix(table(predict(model,testIPA[,c(4,5)]),testIPA$Style))
+  
+  masterAccNBIPA[j] = CM$overall[1]
+  masterSensitivityNBIPA[j] <- mean(CM$byClass[,"Sensitivity"], na.rm = TRUE)
+  masterSpecificityNBIPA[j] <- mean(CM$byClass[,"Specificity"], na.rm = TRUE)
+}
+
+MeanAccNBIPA = colMeans(masterAccNBIPA)
+MeanSenseAle <- colMeans(masterSensitivityNBIPA)
+MeanSpecAle <- colMeans(masterSpecificityNBIPA)
+
+MeanAccNBIPA
+#Mean accuracy here is 89.8% using the Naive Bayes method.
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+# age vs attrition? 18-40, 40-60
+```{r echo=FALSE}
 
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+#Male vs female attrition for fun 
+```{r echo=FALSE}
+
+```
+
+
+# percent of department has attrition for fun
+```{r echo=FALSE}
+
+```
+
+
+#naive bayes vs knn
+```{r echo=FALSE}
+
+```
+
