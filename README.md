@@ -1,7 +1,7 @@
 # DDSProject2
 
 Link to youtube video:
-- 
+- https://youtu.be/HW_8mqiiL2I
 
 Main source code file:
 - Project2.Rmd
@@ -9,8 +9,12 @@ Main source code file:
 Knit file:
 - Project2.html
 
-Final powerpoint file for both group members:
+Final powerpoint file:
 - Project2.pptx
+
+Prediction CSVs:
+- Luke_Predictions_Classification.csv
+- Luke_Predictions_Regression.csv
 
 Supporting CSV files:
 - Case2PredictionsClassifyEXAMPLE.csv

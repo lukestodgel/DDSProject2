@@ -5,7 +5,7 @@ date: "12/4/2021"
 output: html_document
 ---
 # Github: https://github.com/lukestodgel/DDSProject2
-# Youtube: 
+# Youtube: https://youtu.be/HW_8mqiiL2I
 #Summary of the Project
 #Our goal was to perform an EDA, find the top three variables in the data that contributed to attrition, and find variables that supported the creation of a predictive linear regression model that was accurate within $3000.
 #In the first code chunk I included all of the packages needed to perform the tasks in the project as well as set up the data for use.
@@ -105,6 +105,11 @@ max(MeanSpec)
 #Knn.cv test
 
 ```{r echo=FALSE}
+#Writing the best results to a DF
+regressionDF <- knn.cv(jobData2[,c(4,27,35)],jobData2[,3],k=3)
+write.csv(regressionDF,"C:\\Users\\Luke\\Documents\\SMU\\classnotes\\1Fall 2021\\Doing Data Science  DS 6306\\DDSProject2\\Luke_Predictions_Classification.csv", row.names = FALSE)
+
+
 set.seed(10)
 iterations = 100
 numks = 3   #Made no different after about k=10
@@ -173,19 +178,19 @@ for(j in 1:iterations)
   masterSpecificityNB[j] = mean(CM$byClass[2], na.rm = TRUE)
 }
 
-MeanAccNB = colMeans(masterAccNB)
-MeanSensNB = colMeans(masterSensitivityNB)
-MeanSpecNB = colMeans(masterSpecificityNB)
+plot(seq(1,100,1),masterAccNB, xlab = "NB Iteration", ylab = "Accuracy", main = "Accuracy vs K Value")
+plot(seq(1,100,1),masterSensitivityNB, xlab = "NB Iteration", ylab = "Sensitivity", main = "Sensitivity vs K Value")
+plot(seq(1,100,1),masterSpecificityNB, xlab = "NB Iteration", ylab = "Specificity", main = "Specificity vs K Value")
 
 CM
 
-which.max(MeanAccNB)
-which.max(MeanSensNB)
-which.max(MeanSpecNB)
+which.max(masterAccNB)
+which.max(masterSensitivityNB)
+which.max(masterSpecificityNB)
 
-max(MeanAccNB)
-max(MeanSensNB)
-max(MeanSpecNB)
+max(masterAccNB)
+max(masterSensitivityNB)
+max(masterSpecificityNB)
 
 ```
 
@@ -211,11 +216,15 @@ confint(model)
 # Make predictions
 predictions <- model %>% predict(jobDataTest)
 
+#export to csv file
+predsDF <- c(MonthlyIncomePreds = predictions)
+write.csv(predsDF,"C:\\Users\\Luke\\Documents\\SMU\\classnotes\\1Fall 2021\\Doing Data Science  DS 6306\\DDSProject2\\Luke_Predictions_Regression.csv", row.names = FALSE)
+
 # Model performance
 # (a) Compute the prediction error, RMSE -- indicates absolute fit of the model to the data.
 RMSE(predictions, jobDataTest$MonthlyIncome)
 
-# (b) Compute R-square -- how well the model fits the data
+# (b) Compute R-square -- how well the model fits the data - amount of variance explained by the model. It's a percentage
 R2(predictions, jobDataTest$MonthlyIncome)
 
 # plot best predictive model
@@ -232,17 +241,17 @@ jobData2 %>% ggplot(aes(x=MonthlyIncome, y = TotalWorkingYears, color = JobRole)
 
 # Step 3 Calculate Critical Value
 # P value = <2.2e-16 for all but two job roles
-# Manufacturing Director p value = 0.279
-# Sales Executive p value = 0.708
+# Manufacturing Director p value = 0.279 (greater than 0.05)
+# Sales Executive p value = 0.708 (greater than 0.05)
 
 # Step 4 Calculate Test Statistic
-# T value for the intercept is 18.375.
-# T value for each of the different job roles varied. Only two were statistically significant enough to impact MonthlyIncome. Those two roles were Manufacturing Director and Sales Executive.
-# Total Working years also did not have a statistically significant T value.
+# T values for the intercept is 18.375.
+# The T values for each of the different job roles varied and all but two job roles had T values that were too small to be considered significant. 
+# Total Working years had a T value of 17.098.
 
 # Step 5 Statistical Decision
 # We reject the null hypothesis for all job roles and total working years except if the job role is a Manufacturing Director or Sales Executive. 
-# For Manufacturing Directors and Sales Executives we can't, with extreme certainty, declare that their role + total working years does not affect their salary.
+# For Manufacturing Directors and Sales Executives we can't, with extreme certainty, declare that their role + total working years has a significant difference on their salary.
 
 # Step 6 Word the Statistical Decision into Readable Format
 # We are 95% confident that, as the numeric representation of job role + total working years increases by one, total monthly income will increase on average by between .0008657 and .000875.
